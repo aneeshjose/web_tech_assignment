@@ -4,7 +4,7 @@ const app = express();
 const port = 3000;
 var path = require('path');
 var bodyParser = require("body-parser");
-
+var cookieParser = require('cookie-parser');
 
 let serviceAccount = require('./adminsdk.json');
 
@@ -15,6 +15,7 @@ admin.initializeApp({
 let db = admin.firestore();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json())
+app.use(cookieParser());
 
 app.get('/', (req, res) =>{
 //     db.collection('authors').listDocuments().then(re) get()
@@ -63,6 +64,8 @@ app.post('/logincheck', (req, res) =>{
         if(!snapshot.exists){
             res.send({'status':false,'code':'noexists'});
         }else if(snapshot.data().password==password){
+            res.cookie('user',email);
+            res.cookie('type',usertype);
             res.send({'status':true,'code':'exists'});
         }else{
             res.send({'status':false,'code':'nomatch'});
@@ -78,6 +81,7 @@ app.get('/login',(req,res)=>{
 });
 
 app.get('/dashboard',(req,res)=>{
+    // console.log(req.cookies);
     res.sendFile(path.join(__dirname,'/dashboard.html'));
 });
 
