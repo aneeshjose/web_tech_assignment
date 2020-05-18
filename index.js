@@ -46,15 +46,39 @@ app.post('/signupcheck', (req, res) =>{
         }
     }).catch((e)=>{
         console.log(e);
-        res.send({'status':false,'code':e});
+        res.send({'status':false,'code':'error'});
     })
-
-    // res.send("{'status':'done'}");
 });
     
 
 app.get('/signup',(req,res)=>{
-    res.sendFile(path.join(__dirname,'/signup.html'))
+    res.sendFile(path.join(__dirname,'/signup.html'));
+});
+app.post('/logincheck', (req, res) =>{
+    var email=req.body.email;
+    var password=req.body.password;
+    var usertype=req.body.usertype;
+    db.collection(usertype).doc(email).get().then((snapshot)=>{
+        console.log(snapshot.data());
+        if(!snapshot.exists){
+            res.send({'status':false,'code':'noexists'});
+        }else if(snapshot.data().password==password){
+            res.send({'status':true,'code':'exists'});
+        }else{
+            res.send({'status':false,'code':'nomatch'});
+        }
+    }).catch((e)=>{
+        console.log(e);
+        res.send({'status':false,'code':'error'});
+    })
+});
+   
+app.get('/login',(req,res)=>{
+    res.sendFile(path.join(__dirname,'/login.html'));
+});
+
+app.get('/dashboard',(req,res)=>{
+    res.sendFile(path.join(__dirname,'/dashboard.html'));
 });
 
 app.listen(port, () => console.log(`Example app listening at http://localhost:${port}`))

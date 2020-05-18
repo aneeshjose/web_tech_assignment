@@ -9,6 +9,80 @@
             Author:<input type="radio" value="author" name="user"><br>
             Reviewer:<input type="radio" value="reviewer" name="user"><br>
             Admin<input type="radio" value="admin" name="user"><br>
+            <button type="button" onclick="validate()">Login</button>
+            <a href="/signup">I don't have an account</a>
         </form>
+        <script>
+            function validate(){
+                var email=document.getElementById('emailid').value;
+                var password=document.getElementById('password').value;
+                var userType=radioVal();
+                if(checkInputs(email,password,userType)){
+                    var xhttp = new XMLHttpRequest();
+                    xhttp.open("POST", "logincheck",true);
+                    xhttp.onreadystatechange = function() {
+                        if (this.readyState == 4 && this.status == 200) {
+                            var resp=JSON.parse(this.responseText);
+                            console.log(resp);
+                            if(resp.status){
+                                window.location='/dashboard';
+                                // TODO
+                            }else{
+                                if(resp.code=="nonexists"){
+                                    alert("A user have already been registered with this email id");
+                                    return;
+                                }
+                                if(resp.code='nomatch'){
+                                    alert('email id or password does not match');
+                                    return;
+                                }
+                            }
+                        }
+                    };
+                    xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+                        var input = JSON.stringify({
+                            "email": email,
+                            "password": password,
+                            "usertype": userType,
+                        });
+                        xhttp.send(input);
+                
+                }else{
+                cosole.log(resp.status)
+                }
+                
+            }
+            function radioVal(){
+                var userType = document.getElementsByName('user'); 
+                for(i = 0; i < userType.length; i++) { 
+                    if(userType[i].checked) 
+                        return userType[i].value;
+                } 
+            }
+
+            function checkInputs(email,password,userType){
+                if(email==null){
+                    alert('Please enter an email id');
+                    return false;
+                }
+                if(!validateEmail(email)){
+                    alert('Enter a valid email id');
+                    return false;
+                }
+                if(password==null||password==''){
+                    alert('Enter the password');
+                    return false;
+                }
+                if(userType==null){
+                    alert('Please select the sign in type');
+                    return false;
+                }
+                return true;
+            }
+            function validateEmail(email) {
+                var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+                return re.test(String(email).toLowerCase());
+            }
+        </script>
     </body>
 </html>

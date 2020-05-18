@@ -75,6 +75,10 @@
                     alert('Enter a valid email id');
                     return false;
                 }
+                if(password==null||password==''){
+                    alert('Enter a password');
+                    return false;
+                }
                 if(password!=confirmpass){
                     alert('passwords must be the same');
                     return false;
