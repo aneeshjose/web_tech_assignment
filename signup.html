@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+    <head><title>Sign up</title></head>
+    <body>
+        <h1>Sign Up</h1><br>
+        <form>
+            Full name:<input type="text" placeholder="full name" id="fullname"  required="required"><br><br>
+            Email ID:<input type="email" placeholder="email id" id="emailid"  required="required"><br><br>
+            Password:<input type="password" placeholder="password" id="password"  required="required"><br><br>
+            Confirm Password:<input type="password" placeholder="password" id="confirmpass"  required="required"><br><br>
+            Author:<input type="radio" value="author" name="user"><br>
+            Reviewer:<input type="radio" value="reviewer" name="user"><br>
+            Admin<input type="radio" value="admin" name="user"><br>
+            
+            <button type="button" onclick="validate()">Signup</button>
+            <a href="/login">I already have an account</a>
+        </form>
+    </body>
+    <script>
+        function validate(){
+            var name=document.getElementById('fullname').value;
+            var email=document.getElementById('emailid').value;
+            var password=document.getElementById('password').value;
+            var confirmpass=document.getElementById('confirmpass').value;
+            var userType=radioVal();
+            if(checkInputs(name,email,password,confirmpass,userType)){
+            console.log('Done');
+            
+            }else{
+               
+            }
+            
+        }
+        function radioVal(){
+            var userType = document.getElementsByName('user'); 
+            for(i = 0; i < userType.length; i++) { 
+                if(userType[i].checked) 
+                    return userType[i].value;
+            } 
+        }
+
+        function checkInputs(name,email,password,confirmpass,userType){
+            if(name==null || name==''){
+                alert('Please enter a name');
+                return false;
+            }
+            if(email==null){
+                alert('Please enter an email id');
+                return false;
+            }
+            if(!validateEmail(email)){
+                alert('Enter a valid email id');
+                return false;
+            }
+            if(password!=confirmpass){
+                alert('passwords must be the same');
+                return false;
+            }
+            if(userType==null){
+                alert('Please select the sign in type');
+                return false;
+            }
+            return true;
+        }
+        function validateEmail(email) {
+        var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+        return re.test(String(email).toLowerCase());
+}
+    </script>
+</html>
