@@ -7,12 +7,17 @@
                 border: 1px solid black;;
                 /* border-color: black; */
             }
+            #logout{
+                position: absolute;
+                top: 10px;
+                right: 10px;
+            }
         </style>
     </head>
     <body>
 
         <h1>Dashboard</h1><br>
-        <div id="user">Welcome userName</div>
+        <button id="logout" onclick="javascript:window.location='/logout'">Logout</button>
         <div id="serverresponse">
             
         </div>
@@ -22,18 +27,17 @@
                 xhttp.open("GET", "dashboardcheck",true);
                 xhttp.onreadystatechange = function() {
                     if (this.readyState == 4 && this.status == 200) {
-                        console.log(this.responseText)
-                        // var resp=JSON.parse(this.responseText);
-                        // if(resp.status){
-
-                        // }else{
-                            
-                        // }
+                        document.getElementById("serverresponse").innerHTML=this.responseText;
                     }
                 };
                 xhttp.send();
             }
             getDatabaseDetails();
+            function removeSubmission(file){
+                if(confirm("Are you sure to delete this file?")){
+                    window.location='/deletesubmission?file='+file; 
+                }
+            }
         </script>
     </body>     
 </html>

@@ -73,7 +73,7 @@ app.post('/logincheck', (req, res) =>{
             // Matching the username and password
             res.cookie('user',email);
             res.cookie('type',usertype);
-            res.send({'status':true,'code':'exists'});
+            res.send({'status':true});
         }
         else{
             res.send({'status':false,'code':'nomatch'});
@@ -88,6 +88,12 @@ app.get('/login',(req,res)=>{
     res.sendFile(path.join(__dirname,'/ui/login.html'));
 });
 
+app.get('/logout',(req,res)=>{
+    res.cookie("user", null, { expires: new Date(0)});
+    res.cookie("type", null, { expires: new Date(0)});
+    res.redirect('/');
+})
+
 app.get('/dashboard',(req,res)=>{
     console.log(req.cookies.user);
     if(req.cookies.user==null)  res.redirect('/');
@@ -99,15 +105,16 @@ app.post('/uploadcheck',(req,res)=>{
     //parse incoming form data
     form.parse(req, function (err, fields, files) {
         const oldpath = files.fileuploaded.path;
+        const datenow=Date.now().toString();
         // Setting new path to save in the server
-        const newpath = path.join(__dirname+'/files/','/'+Date.now().toString()+'.pdf');
+        const newpath = path.join(__dirname+'/files/','/'+datenow+'.pdf');
         mv(oldpath, newpath, function (err) {
             if (err){
                  res.send({'status':false,'reason':err});
                  console.log(err); //Error while saving to $newpath
             }else{
                 // Saving the info to the database
-                db.collection('papers').doc(newpath).set({
+                db.collection('papers').doc(datenow).set({
                     'author':req.cookies.user,
                     'time':new Date().toDateString(),
                     'name':fields.name,
@@ -134,8 +141,28 @@ app.get('/dashboardcheck',(req,res)=>{
     const type=req.cookies.type;
     if(type=='author'){
         getAuthorPapers(user,res);
+    }else if(type=='admin'){
+        giveAdminPapers(res);
     }
 });
+
+app.get('/download',(req,res)=>{
+    res.sendFile(path.join(__dirname,'/files/'+req.query.file));
+});
+
+app.get('/deletesubmission',(req,res)=>{
+    const user=req.cookies.user;
+    const file=req.query.file;
+    db.collection('papers').doc(file).delete().then((fulFil)=>{
+        fs.unlink(path.join(__dirname,'/files/'+file+'.pdf'),(err)=>{ 
+            if(err){
+                console.log(err);
+            }    
+        res.redirect('/dashboard');
+        });
+    });
+});
+
 
 app.listen(port, () => console.log(`Example app listening at http://localhost:${port}`))
 
@@ -145,31 +172,72 @@ function getAuthorPapers(user,res){
         var tableContent="";
         value.docs.forEach((f)=>{
              tableContent+=`<tr>
-             <td><a href="${f.id}">${f.data().name}</a></td>
-             <td>${f.data().status}</td>
-             <td><button type="button" onclick="removeSubmission(${f.id})">Delete</button></td>                    
-         </tr>`
+                <td><a href="javascript:void(0);" target=_"blank" onclick="javascript:window.open('/download?file='+${f.id}+'.pdf');" class="popup">${f.data().name}</a></td>
+                <td>${f.data().status}</td>
+                <td><button type="button" onclick="removeSubmission('${f.id}')">Delete</button></td>                    
+            </tr>`
         });
-        console.log(f.length);
+        console.log(value.docs.length);
         const uploadbutton=`<button onclick="window.location='/upload'">Upload</button>`;
-        if(f.length>0)
+        const welcomeMessage=`
+        <b>Welcome</b> ${user}<br><br>`;
+        if(value.docs.length>0)
         res.send(
             `
+            ${welcomeMessage}
                 <table>
                     <tr>
                         <th>Paper title</th>
                         <th>status</th>
                         <th>actions</th>
                     </tr>
+                    ${tableContent}
                 </table>
                 <br>
-                ${uploadbutton} 
+                Upload new ${uploadbutton} 
             `
         )
         else
-        res.send(`No papers submitted<br>${uploadbutton}`);
-        console.log(tableContent);
+        res.send(`
+        ${welcomeMessage}
+        No papers submitted<br>
+        Upload new ${uploadbutton}`);
     }).catch((e)=>{
-        res.send({'status':false});
+        console.log(e);
+        res.send({'status':false,'e':e});
     });
+}
+
+function giveAdminPapers(res){
+    const greeting="<b>Welcome</b> Admin<br>"
+    const tablehead=`<tr>
+        <th>Paper title</th>
+        <th>status</th>
+        <th>Author</th>
+        <th>actions</th>
+    </tr>`;
+    db.collection('papers').get().then((values)=>{
+        var tableContent=""
+        values.docs.forEach((f)=>{
+            tableContent+=`<tr>
+                <td><a href="javascript:void(0);" target=_"blank" onclick="javascript:window.open('/download?file='+${f.id}+'.pdf');" class="popup">${f.data().name}</a></td>
+                <td>${f.data().status}</td>
+                <td>${f.data().author}</td>
+                
+                <td><button type="button" onclick="javascript:window.location='/assignpaper?file=${f.data().status=='submitted'?'Re assign':'Assign'}'">Assign</button></td>                    
+            </tr>`
+        });
+        if(values.docs.length>0){
+            res.send(`
+                <table>
+                    ${tablehead}
+                    ${tableContent}
+                </table>
+            `);
+        }else{
+            res.send(`
+                <b color="red">No papers</b>
+            `);
+        }
+    })
 }
