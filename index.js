@@ -216,16 +216,18 @@ function giveReviewerPapers(req,res){
     db.collection('papers').where('reviewer','==',req.cookies.user).get().then((value)=>{
         
         value.docs.forEach((f)=>{
-            const actions=f.data().status=='accepted'?`
+            const actions=f.data().status=='assigned'?`
                 <td>
                     <button type="button" onclick="acceptSubmission('${f.id}')">Accept</button>
                     <button type="button" onclick="rejectSubmission('${f.id}')">Reject</button>
                 </td>  
-            `:'';
+            `:'<td></td>';
             tablecontent+=`
-            <td><a href="javascript:void(0);" target=_"blank" onclick="javascript:window.open('/download?file='+${f.id}+'.pdf');" class="popup">${f.data().name}</a></td>
-            <td>${f.data().status}</td>
-                              
+            <tr>
+                <td><a href="javascript:void(0);" target=_"blank" onclick="javascript:window.open('/download?file='+${f.id}+'.pdf');" class="popup">${f.data().name}</a></td>
+                <td>${f.data().status}</td>
+                ${actions}
+            </tr>
             `;
         });
         res.send(`
@@ -302,7 +304,7 @@ function giveAdminPapers(res){
                     <td><a href="javascript:void(0);" target="_blank" onclick="javascript:window.open('/download?file='+${f.id}+'.pdf');" class="popup">${f.data().name}</a></td>
                     <td>${f.data().status}</td>
                     <td>${f.data().author}</td>
-                    <td>${tAction}</td>                   
+                    ${tAction}                
                 </tr>`
         });
         if(values.docs.length>0){
