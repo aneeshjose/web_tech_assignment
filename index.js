@@ -13,8 +13,13 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 
-const storage = new Storage();
+const GOOGLE_CLOUD_PROJECT_ID = 'webtechnologies-6db17';
+const GOOGLE_CLOUD_KEYFILE = path.join(__dirname,'/storage.json');
 
+const storage =new Storage({
+    projectId: GOOGLE_CLOUD_PROJECT_ID,
+    keyFilename: GOOGLE_CLOUD_KEYFILE,
+});
 
 let db = admin.firestore();
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -22,18 +27,9 @@ app.use(bodyParser.json())
 app.use(cookieParser());
 
 app.get('/', (req, res) =>{
-//     db.collection('authors').listDocuments().then(re) get()
-//   .then((snapshot) => {
-//     snapshot.forEach((doc) => {
-//       console.log(doc.id, '=>', doc.data());
-//     });
-//   })
-//   .catch((err) => {
-//     console.log('Error getting documents', err);
-//   });
-
     res.sendFile(path.join(__dirname + '/index.html'));
 });
+
 app.post('/signupcheck', (req, res) =>{
     var name=req.body.name;
     var email=req.body.email;
@@ -89,7 +85,12 @@ app.get('/dashboard',(req,res)=>{
 });
 
 app.get('/uploadcheck',(req,res)=>{
+    storage.bucket('webtechpapers').upload(path.join(__dirname,'/index.html')).then((fil)=>{
+        res.send(fil.toString());
 
+    }).catch((e)=>{
+         res.send(e.toString());
+    })
 });
 
 app.get('/upload',(req,res)=>{
