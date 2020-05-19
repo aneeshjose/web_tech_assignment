@@ -25,7 +25,11 @@ app.use(cookieParser());
 
 // Initial page
 app.get('/', (req, res) =>{
-    res.sendFile(path.join(__dirname + '/index.html'));
+    if(req.cookies.user!=null){
+        res.redirect('/dashboard');
+    }else{
+        res.sendFile(path.join(__dirname + '/ui/index.html'));
+    }
 });
 
 app.post('/signupcheck', (req, res) =>{
@@ -54,7 +58,7 @@ app.post('/signupcheck', (req, res) =>{
     
 
 app.get('/signup',(req,res)=>{
-    res.sendFile(path.join(__dirname,'/signup.html'));
+    res.sendFile(path.join(__dirname,'/ui/signup.html'));
 });
 app.post('/logincheck', (req, res) =>{
     const email=req.body.email;
@@ -81,11 +85,13 @@ app.post('/logincheck', (req, res) =>{
 });
    
 app.get('/login',(req,res)=>{
-    res.sendFile(path.join(__dirname,'/login.html'));
+    res.sendFile(path.join(__dirname,'/ui/login.html'));
 });
 
 app.get('/dashboard',(req,res)=>{
-    res.sendFile(path.join(__dirname,'/dashboard.html'));
+    console.log(req.cookies.user);
+    if(req.cookies.user==null)  res.redirect('/');
+    else  res.sendFile(path.join(__dirname,'/ui/dashboard.html'));
 });
 
 app.post('/uploadcheck',(req,res)=>{
@@ -93,17 +99,20 @@ app.post('/uploadcheck',(req,res)=>{
     //parse incoming form data
     form.parse(req, function (err, fields, files) {
         const oldpath = files.fileuploaded.path;
+        // Setting new path to save in the server
         const newpath = path.join(__dirname+'/files/','/'+Date.now().toString()+'.pdf');
         mv(oldpath, newpath, function (err) {
             if (err){
                  res.send({'status':false,'reason':err});
                  console.log(err); //Error while saving to $newpath
             }else{
+                // Saving the info to the database
                 db.collection('papers').doc(newpath).set({
                     'author':req.cookies.user,
                     'time':new Date().toDateString(),
                     'name':fields.name,
-                    'description':fields.desc
+                    'description':fields.desc,
+                    'status':'submitted',
                 }).then((result)=>{
                     res.send({'status':true});//Redirect to dashboard on successful upload
                 }).catch((e)=>{
@@ -116,19 +125,51 @@ app.post('/uploadcheck',(req,res)=>{
 });
 
 app.get('/upload',(req,res)=>{
-    res.sendFile(path.join(__dirname,'/upload.html'));
+    if(req.cookies.user==null)  res.redirect('/');
+    else res.sendFile(path.join(__dirname,'/ui/upload.html'));
 });
 
 app.get('/dashboardcheck',(req,res)=>{
     const user=req.cookies.user;
     const type=req.cookies.type;
     if(type=='author'){
-        db.collection('papers').where('author','==',user).get().then((value)=>{
-            // console.log(value.docs);
-        }).catch((e)=>{
-            res.send({'status':false});
-        });
+        getAuthorPapers(user,res);
     }
 });
 
 app.listen(port, () => console.log(`Example app listening at http://localhost:${port}`))
+
+
+function getAuthorPapers(user,res){
+    db.collection('papers').where('author','==',user).get().then((value)=>{
+        var tableContent="";
+        value.docs.forEach((f)=>{
+             tableContent+=`<tr>
+             <td><a href="${f.id}">${f.data().name}</a></td>
+             <td>${f.data().status}</td>
+             <td><button type="button" onclick="removeSubmission(${f.id})">Delete</button></td>                    
+         </tr>`
+        });
+        console.log(f.length);
+        const uploadbutton=`<button onclick="window.location='/upload'">Upload</button>`;
+        if(f.length>0)
+        res.send(
+            `
+                <table>
+                    <tr>
+                        <th>Paper title</th>
+                        <th>status</th>
+                        <th>actions</th>
+                    </tr>
+                </table>
+                <br>
+                ${uploadbutton} 
+            `
+        )
+        else
+        res.send(`No papers submitted<br>${uploadbutton}`);
+        console.log(tableContent);
+    }).catch((e)=>{
+        res.send({'status':false});
+    });
+}
