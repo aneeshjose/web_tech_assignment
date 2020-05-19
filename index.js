@@ -5,12 +5,16 @@ const port = 3000;
 var path = require('path');
 var bodyParser = require("body-parser");
 var cookieParser = require('cookie-parser');
+const {Storage} = require('@google-cloud/storage');
 
 let serviceAccount = require('./adminsdk.json');
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
+
+const storage = new Storage();
+
 
 let db = admin.firestore();
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -81,8 +85,36 @@ app.get('/login',(req,res)=>{
 });
 
 app.get('/dashboard',(req,res)=>{
-    // console.log(req.cookies);
     res.sendFile(path.join(__dirname,'/dashboard.html'));
 });
+
+app.get('/uploadcheck',(req,res)=>{
+
+});
+
+app.get('/upload',(req,res)=>{
+    res.sendFile(path.join(__dirname,'/upload.html'));
+});
+
+app.get('/dashboardcheck',(req,res)=>{
+    var user=req.cookies.user;
+    var type=req.cookies.type;
+    if(type=='author'){
+        db.collection('papers').where('author','==',user).get().then((value)=>{
+            console.log(value.docs);
+        }).catch((e)=>{
+            res.send({'status':false});
+        });
+    }
+});
+// app.get('/checkauthor',(req,res)=>{
+//     res.send('created');
+// });
+// app.get('/checkreviewer',(req,res)=>{
+//     res.send('created');
+// });
+// app.get('/checkadmin',(req,res)=>{
+//     res.send('created');
+// });
 
 app.listen(port, () => console.log(`Example app listening at http://localhost:${port}`))
