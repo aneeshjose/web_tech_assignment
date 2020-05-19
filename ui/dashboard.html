@@ -22,6 +22,16 @@
             
         </div>
         <script>
+            function acceptSubmission(id){
+            if(confirm('Are you sure to accept this?')){
+                window.location='/acceptsubmission?doc='+id;
+            }
+            }
+            function rejectSubmission(id){
+                if(confirm('Are you sure to reject this?')){
+                    window.location='/rejectsubmission?doc='+id;
+                }
+            }
             function getDatabaseDetails(){
                 var xhttp = new XMLHttpRequest();
                 xhttp.open("GET", "dashboardcheck",true);

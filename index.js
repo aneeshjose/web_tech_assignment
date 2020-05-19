@@ -151,10 +151,12 @@ app.get('/dashboardcheck',(req,res)=>{
         getAuthorPapers(user,res);
     }else if(type=='admin'){
         giveAdminPapers(res);
+    }else if(type=='reviewer'){
+        giveReviewerPapers(req,res);
     }
 });
 
-app.get('/assignpaper',reviewPapers);
+app.get('/assignpaper',assignToReviewer);
 
 app.get('/assign',assign);
 
@@ -163,7 +165,7 @@ app.get('/download',(req,res)=>{
 });
 
 app.get('/deletesubmission',(req,res)=>{
-    const user=req.cookies.user;
+    // const user=req.cookies.user;
     const file=req.query.file;
     db.collection('papers').doc(file).delete().then((fulFil)=>{
         fs.unlink(path.join(__dirname,'/files/'+file+'.pdf'),(err)=>{ 
@@ -177,7 +179,70 @@ app.get('/deletesubmission',(req,res)=>{
 
 app.get('assign',assign);
 
+app.get('/acceptsubmission',(req,res)=>{
+    changeSubmission(req,res,true);
+});
+
+app.get('/rejectsubmission',(req,res)=>{
+    changeSubmission(req,res,false);
+});
+
 app.listen(port, () => console.log(`Example app listening at http://localhost:${port}`))
+
+
+
+function changeSubmission(req,res,status){
+    console.log(req.query.doc);
+    db.collection('papers').doc(req.query.doc).update({
+        status:status?'accepted':'rejected',
+    }).then(value=>{
+        db.collection('reviewer').doc(req.cookies.user).update({
+            'assigned':false,
+            'paper':null
+        }).then(result=>{
+            res.redirect('/dashboard');
+        }).catch(err=>{
+            console.log(err);
+            res.redirect('/dashboard');
+        });
+    }).catch(e=>{
+        console.log(e);
+        res.redirect('/dashboard');
+    })
+}
+
+function giveReviewerPapers(req,res){
+    var tablecontent=""
+    db.collection('papers').where('reviewer','==',req.cookies.user).get().then((value)=>{
+        
+        value.docs.forEach((f)=>{
+            const actions=f.data().status=='accepted'?`
+                <td>
+                    <button type="button" onclick="acceptSubmission('${f.id}')">Accept</button>
+                    <button type="button" onclick="rejectSubmission('${f.id}')">Reject</button>
+                </td>  
+            `:'';
+            tablecontent+=`
+            <td><a href="javascript:void(0);" target=_"blank" onclick="javascript:window.open('/download?file='+${f.id}+'.pdf');" class="popup">${f.data().name}</a></td>
+            <td>${f.data().status}</td>
+                              
+            `;
+        });
+        res.send(`
+            <table>
+                <tr>
+                    <th>Paper title</th>
+                    <th>status</th>
+                    <th>actions</th>
+                </tr>
+                ${tablecontent}
+            </table>
+        `);
+    }).catch(e=>{
+        console.log(e);
+        res.send("Something went wrong");
+    });
+}
 
 function getAuthorPapers(user,res){
     db.collection('papers').where('author','==',user).get().then((value)=>{
@@ -234,7 +299,7 @@ function giveAdminPapers(res){
             const tAction=f.data().status=='submitted'?`<td><button type="button" onclick="javascript:window.location='/assignpaper?file=${f.id}&&user=${f.data().author}'">Assign</button>`:'';
             tableContent+=`
                 <tr>
-                    <td><a href="javascript:void(0);" target=_"blank" onclick="javascript:window.open('/download?file='+${f.id}+'.pdf');" class="popup">${f.data().name}</a></td>
+                    <td><a href="javascript:void(0);" target="_blank" onclick="javascript:window.open('/download?file='+${f.id}+'.pdf');" class="popup">${f.data().name}</a></td>
                     <td>${f.data().status}</td>
                     <td>${f.data().author}</td>
                     <td>${tAction}</td>                   
@@ -255,7 +320,7 @@ function giveAdminPapers(res){
         }
     })
 }
-function reviewPapers(req,res){
+function assignToReviewer(req,res){
     if(!req.cookies.user=="admin"){
         res.redirect('/dashboard')
     }else{
@@ -324,7 +389,8 @@ function assign(req,res){
         res.redirect('/dashboard');
     }else{
         db.collection('papers').doc(req.query.file).update({
-            'status':'assigned'
+            'status':'assigned',
+            'reviewer':req.query.reviewer
         }).then((fil)=>{
             db.collection('reviewer').doc(req.query.reviewer).update({
                 'assigned':true,
