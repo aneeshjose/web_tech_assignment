@@ -16,6 +16,15 @@ admin.initializeApp({
 });
 let db = admin.firestore();
 
+const style=`
+    <style>
+        table,th,td{
+            border: 1px solid black;;
+            /* border-color: black; */
+        }
+    </style>
+`;
+
 // To parse the json data over the app
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json())
@@ -44,7 +53,7 @@ app.post('/signupcheck', (req, res) =>{
             res.send({'status':false,'code':'exists'});
         }else{
             // if not save it to the db
-            db.collection(usertype).doc(email).set({'name':name,'password':password,'assigned':true}).then((result)=>{
+            db.collection(usertype).doc(email).set({'name':name,'password':password,'assigned':false}).then((result)=>{
                 res.send({'status':true});
             }).catch((e)=>{
                 res.send({'status':false,'code':e});
@@ -144,15 +153,109 @@ app.get('/dashboardcheck',(req,res)=>{
         giveAdminPapers(res);
     }
 });
-const style=`
-    <style>
-        table,th,td{
-            border: 1px solid black;;
-            /* border-color: black; */
+
+app.get('/assignpaper',reviewPapers);
+
+app.get('/assign',assign);
+
+app.get('/download',(req,res)=>{
+    res.sendFile(path.join(__dirname,'/files/'+req.query.file));
+});
+
+app.get('/deletesubmission',(req,res)=>{
+    const user=req.cookies.user;
+    const file=req.query.file;
+    db.collection('papers').doc(file).delete().then((fulFil)=>{
+        fs.unlink(path.join(__dirname,'/files/'+file+'.pdf'),(err)=>{ 
+            if(err){
+                console.log(err);
+            }    
+        res.redirect('/dashboard');
+        });
+    });
+});
+
+app.get('assign',assign);
+
+app.listen(port, () => console.log(`Example app listening at http://localhost:${port}`))
+
+function getAuthorPapers(user,res){
+    db.collection('papers').where('author','==',user).get().then((value)=>{
+        var tableContent="";
+        value.docs.forEach((f)=>{
+             tableContent+=`<tr>
+                <td><a href="javascript:void(0);" target=_"blank" onclick="javascript:window.open('/download?file='+${f.id}+'.pdf');" class="popup">${f.data().name}</a></td>
+                <td>${f.data().status}</td>
+                <td><button type="button" onclick="removeSubmission('${f.id}')">Delete</button></td>                    
+            </tr>`
+        });
+        const uploadbutton=`<button onclick="window.location='/upload'">Upload</button>`;
+        const welcomeMessage=`
+        <b>Welcome</b> ${user}<br><br>`;
+        if(value.docs.length>0)
+            res.send(
+                `
+                    ${welcomeMessage}
+                    <table>
+                        <tr>
+                            <th>Paper title</th>
+                            <th>status</th>
+                            <th>actions</th>
+                        </tr>
+                        ${tableContent}
+                    </table>
+                    <br>
+                    Upload new ${uploadbutton} 
+                `
+            );
+        else
+            res.send(`
+                ${welcomeMessage}
+                No papers submitted<br>
+                Upload new ${uploadbutton}
+            `);
+    }).catch((e)=>{
+        console.log(e);
+        res.send({'status':false,'e':e});
+    });
+}
+
+function giveAdminPapers(res){
+    const greeting="<b>Welcome</b> Admin<br>"
+    const tablehead=`<tr>
+        <th>Paper title</th>
+        <th>status</th>
+        <th>Author</th>
+        <th>actions</th>
+    </tr>`;
+    db.collection('papers').get().then((values)=>{
+        var tableContent=""
+        values.docs.forEach((f)=>{
+            const tAction=f.data().status=='submitted'?`<td><button type="button" onclick="javascript:window.location='/assignpaper?file=${f.id}&&user=${f.data().author}'">Assign</button>`:'';
+            tableContent+=`
+                <tr>
+                    <td><a href="javascript:void(0);" target=_"blank" onclick="javascript:window.open('/download?file='+${f.id}+'.pdf');" class="popup">${f.data().name}</a></td>
+                    <td>${f.data().status}</td>
+                    <td>${f.data().author}</td>
+                    <td>${tAction}</td>                   
+                </tr>`
+        });
+        if(values.docs.length>0){
+            res.send(`
+                ${greeting}
+                <table>
+                    ${tablehead}
+                    ${tableContent}
+                </table>
+            `);
+        }else{
+            res.send(`
+                <b color="red">No papers</b>
+            `);
         }
-    </style>
-`;
-app.get('/assignpaper',(req,res)=>{
+    })
+}
+function reviewPapers(req,res){
     if(!req.cookies.user=="admin"){
         res.redirect('/dashboard')
     }else{
@@ -166,13 +269,13 @@ app.get('/assignpaper',(req,res)=>{
 
         const greeting=`<h3>Welcome</h3><br>Assign ${req.query.file} of ${req.query.user}<br>`;
         var tableContent="";
-        db.collection('reviewers').where('assigned','==',false).get().then((value)=>{
+        db.collection('reviewer').where('assigned','==',false).get().then((value)=>{
             value.docs.forEach((f)=>{
                 tableContent+=`
                 <tr>
                         <td>${f.data().name}</td>
                         <td>${f.id}</td>
-                    <td><button onclick="javascript:window.location=/assign?file=${req.query.file}&&reviewer=${f.id}">Assign</button></td>
+                    <td><button onclick="javascript:window.location='/assign?file=${req.query.file}&&reviewer=${f.id}'">Assign</button></td>
                 `
             });
             const body=`
@@ -188,7 +291,6 @@ app.get('/assignpaper',(req,res)=>{
                 </table>
                 </body>
             `;
-           
             if(value.docs.length>0){
             res.send(`
                 <!DOOCTYPE>
@@ -215,101 +317,27 @@ app.get('/assignpaper',(req,res)=>{
             res.send('Something went wrong');
         });
     }
-});
-
-app.get('/download',(req,res)=>{
-    res.sendFile(path.join(__dirname,'/files/'+req.query.file));
-});
-
-app.get('/deletesubmission',(req,res)=>{
-    const user=req.cookies.user;
-    const file=req.query.file;
-    db.collection('papers').doc(file).delete().then((fulFil)=>{
-        fs.unlink(path.join(__dirname,'/files/'+file+'.pdf'),(err)=>{ 
-            if(err){
-                console.log(err);
-            }    
-        res.redirect('/dashboard');
-        });
-    });
-});
-
-
-
-app.listen(port, () => console.log(`Example app listening at http://localhost:${port}`))
-
-
-function getAuthorPapers(user,res){
-    db.collection('papers').where('author','==',user).get().then((value)=>{
-        var tableContent="";
-        value.docs.forEach((f)=>{
-             tableContent+=`<tr>
-                <td><a href="javascript:void(0);" target=_"blank" onclick="javascript:window.open('/download?file='+${f.id}+'.pdf');" class="popup">${f.data().name}</a></td>
-                <td>${f.data().status}</td>
-                <td><button type="button" onclick="removeSubmission('${f.id}')">Delete</button></td>                    
-            </tr>`
-        });
-        console.log(value.docs.length);
-        const uploadbutton=`<button onclick="window.location='/upload'">Upload</button>`;
-        const welcomeMessage=`
-        <b>Welcome</b> ${user}<br><br>`;
-        if(value.docs.length>0)
-        res.send(
-            `
-            ${welcomeMessage}
-                <table>
-                    <tr>
-                        <th>Paper title</th>
-                        <th>status</th>
-                        <th>actions</th>
-                    </tr>
-                    ${tableContent}
-                </table>
-                <br>
-                Upload new ${uploadbutton} 
-            `
-        )
-        else
-        res.send(`
-        ${welcomeMessage}
-        No papers submitted<br>
-        Upload new ${uploadbutton}`);
-    }).catch((e)=>{
-        console.log(e);
-        res.send({'status':false,'e':e});
-    });
 }
 
-function giveAdminPapers(res){
-    const greeting="<b>Welcome</b> Admin<br>"
-    const tablehead=`<tr>
-        <th>Paper title</th>
-        <th>status</th>
-        <th>Author</th>
-        <th>actions</th>
-    </tr>`;
-    db.collection('papers').get().then((values)=>{
-        var tableContent=""
-        values.docs.forEach((f)=>{
-            tableContent+=`
-                <tr>
-                    <td><a href="javascript:void(0);" target=_"blank" onclick="javascript:window.open('/download?file='+${f.id}+'.pdf');" class="popup">${f.data().name}</a></td>
-                    <td>${f.data().status}</td>
-                    <td>${f.data().author}</td>
-                    <td><button type="button" onclick="javascript:window.location='/assignpaper?file=${f.id}&&user=${f.data().author}'">${f.data().status=='submitted'?'Re assign':'Assign'}</button></td>                    
-                </tr>`
+function assign(req,res){
+    if(req.cookies.type!='admin'){
+        res.redirect('/dashboard');
+    }else{
+        db.collection('papers').doc(req.query.file).update({
+            'status':'assigned'
+        }).then((fil)=>{
+            db.collection('reviewer').doc(req.query.reviewer).update({
+                'assigned':true,
+                'paper':req.query.file
+            }).then((assigned)=>{
+                res.redirect('/dashboard');
+            }).catch(e=>{
+                console.log(e);
+                res.send('Something went wrong');
+            });
+        }).catch(e=>{
+            console.log(e);
+            res.send('Something went wrong');
         });
-        if(values.docs.length>0){
-            res.send(`
-                <table>
-                    ${tablehead}
-                    ${tableContent}
-                </table>
-            `);
-        }else{
-            res.send(`
-                <b color="red">No papers</b>
-            `);
-        }
-    })
+    }
 }
