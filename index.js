@@ -15,10 +15,14 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 let db = admin.firestore();
+
+// creates directory files if not exists 
 var dir = './files';
 if (!fs.existsSync(dir)){
     fs.mkdirSync(dir);
 }
+
+// css
 const style=`
     <style>
         table,th,td{
@@ -50,12 +54,13 @@ app.post('/signupcheck', (req, res) =>{
     const email=req.body.email;
     const password=req.body.password;
     const usertype=req.body.usertype;
+    // fetch the user to check whether the user already in the db
     db.collection(usertype).doc(email).get().then((snapshot)=>{
         if(snapshot.exists){
             // Check whether the user already in the db
             res.send({'status':false,'code':'exists'});
         }else{
-            // if not save it to the db
+            // if not save it to the db in eg:author->email->...
             db.collection(usertype).doc(email).set({'name':name,'password':password,'assigned':false}).then((result)=>{
                 res.send({'status':true});
             }).catch((e)=>{
@@ -63,15 +68,18 @@ app.post('/signupcheck', (req, res) =>{
             });
         }
     }).catch((e)=>{
+        // EXception
         console.log(e);
         res.send({'status':false,'code':'error'});
     })
 });
     
-
+// route of the signup page
 app.get('/signup',(req,res)=>{
     res.sendFile(path.join(__dirname,'/ui/signup.html'));
 });
+
+// check the login credentials
 app.post('/logincheck', (req, res) =>{
     const email=req.body.email;
     const password=req.body.password;
@@ -81,13 +89,14 @@ app.post('/logincheck', (req, res) =>{
             // Check whether the user is in the db
             res.send({'status':false,'code':'noexists'});
         }
-        else if(snapshot.data().password==password){
-            // Matching the username and password
+        else if(snapshot.data().password==password){// Matching the username and password
+            // Setting cookies
             res.cookie('user',email);
             res.cookie('type',usertype);
             res.send({'status':true});
         }
         else{
+            // No match
             res.send({'status':false,'code':'nomatch'});
         }
     }).catch((e)=>{
@@ -95,18 +104,21 @@ app.post('/logincheck', (req, res) =>{
         res.send({'status':false,'code':'error'});
     })
 });
-   
+
+// Route to login page
 app.get('/login',(req,res)=>{
     res.sendFile(path.join(__dirname,'/ui/login.html'));
 });
 
 app.get('/logout',(req,res)=>{
+    // clearing cookies
     res.cookie("user", null, { expires: new Date(0)});
     res.cookie("type", null, { expires: new Date(0)});
     res.redirect('/');
 })
 
 app.get('/dashboard',(req,res)=>{
+    // redirect to home page if not signed in
     if(req.cookies.user==null)  res.redirect('/');
     else  res.sendFile(path.join(__dirname,'/ui/dashboard.html'));
 });
@@ -149,6 +161,7 @@ app.get('/upload',(req,res)=>{
 });
 
 app.get('/dashboardcheck',(req,res)=>{
+    // fetch email id and usertype from cookies
     const user=req.cookies.user;
     const type=req.cookies.type;
     if(type=='author'){
@@ -165,17 +178,19 @@ app.get('/assignpaper',assignToReviewer);
 app.get('/assign',assign);
 
 app.get('/download',(req,res)=>{
+    // send file to the client (pdf)
     res.sendFile(path.join(__dirname,'/files/'+req.query.file));
 });
 
 app.get('/deletesubmission',(req,res)=>{
-    // const user=req.cookies.user;
     const file=req.query.file;
     db.collection('papers').doc(file).delete().then((fulFil)=>{
+        // deleting the file
         fs.unlink(path.join(__dirname,'/files/'+file+'.pdf'),(err)=>{ 
             if(err){
                 console.log(err);
             }    
+        // redirect page to dashboard
         res.redirect('/dashboard');
         });
     });
@@ -197,9 +212,11 @@ app.listen(port, () => console.log(`Example app listening at http://localhost:${
 
 function changeSubmission(req,res,status){
     console.log(req.query.doc);
+    // update the status of the paper
     db.collection('papers').doc(req.query.doc).update({
         status:status?'accepted':'rejected',
     }).then(value=>{
+        // Change the field in the reviewer profile
         db.collection('reviewer').doc(req.cookies.user).update({
             'assigned':false,
             'paper':null
