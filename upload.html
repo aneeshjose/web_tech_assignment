@@ -4,14 +4,12 @@
         <title>Upload file</title>
     </head>
     <body>
-        <form>
-            Choose a file to upload:<input type="file" id="file">
-            <button type="button" onclick="uploadFile()"></button>
+        <form enctype="multipart/form-data" action="/uploadcheck" method="post">
+            Choose a file to upload:<input type="file" id="file" name="fileuploaded" required="true">
+            <button type="submit">Upload</button>
         </form>
         <script>
-            function uploadFile(){
-                
-            }
+            
         </script>
     </body>
 </html>

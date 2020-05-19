@@ -2,23 +2,15 @@ const admin = require('firebase-admin');
 const express = require('express');
 const app = express();
 const port = 3000;
-var path = require('path');
-var bodyParser = require("body-parser");
-var cookieParser = require('cookie-parser');
-const {Storage} = require('@google-cloud/storage');
+const path = require('path');
+const bodyParser = require("body-parser");
+const cookieParser = require('cookie-parser');
+const formidable = require('formidable');
 
 let serviceAccount = require('./adminsdk.json');
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
-});
-
-const GOOGLE_CLOUD_PROJECT_ID = 'webtechnologies-6db17';
-const GOOGLE_CLOUD_KEYFILE = path.join(__dirname,'/storage.json');
-
-const storage =new Storage({
-    projectId: GOOGLE_CLOUD_PROJECT_ID,
-    keyFilename: GOOGLE_CLOUD_KEYFILE,
 });
 
 let db = admin.firestore();
@@ -31,10 +23,10 @@ app.get('/', (req, res) =>{
 });
 
 app.post('/signupcheck', (req, res) =>{
-    var name=req.body.name;
-    var email=req.body.email;
-    var password=req.body.password;
-    var usertype=req.body.usertype;
+    const name=req.body.name;
+    const email=req.body.email;
+    const password=req.body.password;
+    const usertype=req.body.usertype;
     db.collection(usertype).doc(email).get().then((snapshot)=>{
         if(snapshot.exists){
             res.send({'status':false,'code':'exists'});
@@ -56,9 +48,9 @@ app.get('/signup',(req,res)=>{
     res.sendFile(path.join(__dirname,'/signup.html'));
 });
 app.post('/logincheck', (req, res) =>{
-    var email=req.body.email;
-    var password=req.body.password;
-    var usertype=req.body.usertype;
+    const email=req.body.email;
+    const password=req.body.password;
+    const usertype=req.body.usertype;
     db.collection(usertype).doc(email).get().then((snapshot)=>{
         console.log(snapshot.data());
         if(!snapshot.exists){
@@ -84,13 +76,12 @@ app.get('/dashboard',(req,res)=>{
     res.sendFile(path.join(__dirname,'/dashboard.html'));
 });
 
-app.get('/uploadcheck',(req,res)=>{
-    storage.bucket('webtechpapers').upload(path.join(__dirname,'/index.html')).then((fil)=>{
-        res.send(fil.toString());
-
-    }).catch((e)=>{
-         res.send(e.toString());
-    })
+app.post('/uploadcheck',(req,res)=>{
+    const form = new formidable.IncomingForm();
+    form.parse(req, function (err, fields, files) {
+      
+    });
+    
 });
 
 app.get('/upload',(req,res)=>{
@@ -98,8 +89,8 @@ app.get('/upload',(req,res)=>{
 });
 
 app.get('/dashboardcheck',(req,res)=>{
-    var user=req.cookies.user;
-    var type=req.cookies.type;
+    const user=req.cookies.user;
+    const type=req.cookies.type;
     if(type=='author'){
         db.collection('papers').where('author','==',user).get().then((value)=>{
             console.log(value.docs);
@@ -108,14 +99,5 @@ app.get('/dashboardcheck',(req,res)=>{
         });
     }
 });
-// app.get('/checkauthor',(req,res)=>{
-//     res.send('created');
-// });
-// app.get('/checkreviewer',(req,res)=>{
-//     res.send('created');
-// });
-// app.get('/checkadmin',(req,res)=>{
-//     res.send('created');
-// });
 
 app.listen(port, () => console.log(`Example app listening at http://localhost:${port}`))
