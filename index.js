@@ -1,7 +1,7 @@
 const admin = require('firebase-admin');
 const express = require('express');
 const app = express();
-const port = 3000;
+const port = 3011;
 const path = require('path');
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
@@ -15,7 +15,10 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 let db = admin.firestore();
-
+var dir = './files';
+if (!fs.existsSync(dir)){
+    fs.mkdirSync(dir);
+}
 const style=`
     <style>
         table,th,td{
@@ -118,7 +121,8 @@ app.post('/uploadcheck',(req,res)=>{
         const newpath = path.join(__dirname+'/files/','/'+datenow+'.pdf');
         mv(oldpath, newpath, function (err) {
             if (err){
-                 res.send({'status':false,'reason':err});
+                res.send({'status':false,'reason':err});
+                
                  console.log(err); //Error while saving to $newpath
             }else{
                 // Saving the info to the database
