@@ -44,7 +44,7 @@ app.post('/signupcheck', (req, res) =>{
             res.send({'status':false,'code':'exists'});
         }else{
             // if not save it to the db
-            db.collection(usertype).doc(email).set({'name':name,'password':password}).then((result)=>{
+            db.collection(usertype).doc(email).set({'name':name,'password':password,'assigned':true}).then((result)=>{
                 res.send({'status':true});
             }).catch((e)=>{
                 res.send({'status':false,'code':e});
@@ -95,7 +95,6 @@ app.get('/logout',(req,res)=>{
 })
 
 app.get('/dashboard',(req,res)=>{
-    console.log(req.cookies.user);
     if(req.cookies.user==null)  res.redirect('/');
     else  res.sendFile(path.join(__dirname,'/ui/dashboard.html'));
 });
@@ -145,6 +144,78 @@ app.get('/dashboardcheck',(req,res)=>{
         giveAdminPapers(res);
     }
 });
+const style=`
+    <style>
+        table,th,td{
+            border: 1px solid black;;
+            /* border-color: black; */
+        }
+    </style>
+`;
+app.get('/assignpaper',(req,res)=>{
+    if(!req.cookies.user=="admin"){
+        res.redirect('/dashboard')
+    }else{
+        res.setHeader('ContentType','text/html');
+
+        const head=`
+        <head>
+            <title>Assign paper</title>
+            ${style}
+        </head>`;
+
+        const greeting=`<h3>Welcome</h3><br>Assign ${req.query.file} of ${req.query.user}<br>`;
+        var tableContent="";
+        db.collection('reviewers').where('assigned','==',false).get().then((value)=>{
+            value.docs.forEach((f)=>{
+                tableContent+=`
+                <tr>
+                        <td>${f.data().name}</td>
+                        <td>${f.id}</td>
+                    <td><button onclick="javascript:window.location=/assign?file=${req.query.file}&&reviewer=${f.id}">Assign</button></td>
+                `
+            });
+            const body=`
+                ${greeting}
+                <body>
+                <table>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Action</th>
+                    </tr>
+                ${tableContent}
+                </table>
+                </body>
+            `;
+           
+            if(value.docs.length>0){
+            res.send(`
+                <!DOOCTYPE>
+                <html>
+                    ${head}
+                    ${body}
+                </html>
+                
+            `);
+            }else{
+                res.send(`
+                <!DOOCTYPE>
+                <html>
+                    ${head}
+                    <body>
+                    No reviewers available
+                    </body>
+                </html>
+                
+            `);
+            }
+        }).catch((e)=>{
+            console.log(e);
+            res.send('Something went wrong');
+        });
+    }
+});
 
 app.get('/download',(req,res)=>{
     res.sendFile(path.join(__dirname,'/files/'+req.query.file));
@@ -162,6 +233,7 @@ app.get('/deletesubmission',(req,res)=>{
         });
     });
 });
+
 
 
 app.listen(port, () => console.log(`Example app listening at http://localhost:${port}`))
@@ -219,13 +291,13 @@ function giveAdminPapers(res){
     db.collection('papers').get().then((values)=>{
         var tableContent=""
         values.docs.forEach((f)=>{
-            tableContent+=`<tr>
-                <td><a href="javascript:void(0);" target=_"blank" onclick="javascript:window.open('/download?file='+${f.id}+'.pdf');" class="popup">${f.data().name}</a></td>
-                <td>${f.data().status}</td>
-                <td>${f.data().author}</td>
-                
-                <td><button type="button" onclick="javascript:window.location='/assignpaper?file=${f.data().status=='submitted'?'Re assign':'Assign'}'">Assign</button></td>                    
-            </tr>`
+            tableContent+=`
+                <tr>
+                    <td><a href="javascript:void(0);" target=_"blank" onclick="javascript:window.open('/download?file='+${f.id}+'.pdf');" class="popup">${f.data().name}</a></td>
+                    <td>${f.data().status}</td>
+                    <td>${f.data().author}</td>
+                    <td><button type="button" onclick="javascript:window.location='/assignpaper?file=${f.id}&&user=${f.data().author}'">${f.data().status=='submitted'?'Re assign':'Assign'}</button></td>                    
+                </tr>`
         });
         if(values.docs.length>0){
             res.send(`
