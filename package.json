@@ -5,6 +5,8 @@
     "express": "^4.17.1",
     "firebase-admin": "^8.12.1",
     "formidable": "^1.2.2",
+    "fs": "0.0.1-security",
+    "mv": "^2.1.1",
     "path": "^0.12.7",
     "urlencoded-parser": "^1.0.0"
   }

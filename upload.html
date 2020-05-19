@@ -4,12 +4,63 @@
         <title>Upload file</title>
     </head>
     <body>
-        <form enctype="multipart/form-data" action="/uploadcheck" method="post">
-            Choose a file to upload:<input type="file" id="file" name="fileuploaded" required="true">
-            <button type="submit">Upload</button>
+        <form>
+            Name of the presentation:<input type="text" id="papername"><br><br>
+            Description:<br> <textarea name="desc" id="description" cols="30" rows="10"></textarea><br><br>
+            Choose a file to upload (pdf):<input type="file" id="file0" name="fileuploaded" required="true"><br><br>
+
+            <button type="button" onclick="uploadFile()">Upload</button>
         </form>
         <script>
-            
+            // Simple format check whether a valid pdf or not
+            function checkValidpdf(name){
+                var lastFive = name.substr(name.length - 3); 
+                return lastFive=='pdf';
+            }
+            function uploadFile(){
+                const name=document.getElementById('papername').value;
+                const description=document.getElementById('description').value;
+                if(name==null||name==''){
+                    alert('please enter the title of the paper');
+                    return;
+                }
+                if(description==null||description==''){
+                    alert('Please provide a description');
+                    return;
+                }
+                const filename=document.getElementById("file0").files[0];
+                if(filename==null){
+                    alert('Choose a file to upload');
+                    return;
+                }
+                console.log(filename.name);
+                if(!checkValidpdf(filename.name)){
+
+                    alert('Please choose a valid pdf file');
+                    return;
+                }
+                
+                let xhttp = new XMLHttpRequest();
+                let formData = new FormData();
+                
+                formData.append("fileuploaded", filename);    
+                formData.append('name',name);
+                formData.append('desc',description);                            
+                xhttp.open("POST", '/uploadcheck');
+                xhttp.send(formData);
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {
+                        var resp=JSON.parse(this.responseText);
+                        if(resp.status){
+                            alert('Successfully uploaded');
+                            window.location='/dashboard';
+                        }else{
+                            alert("An error has occured");
+                            return;
+                        }
+                    }
+                };
+            }
         </script>
     </body>
 </html>
