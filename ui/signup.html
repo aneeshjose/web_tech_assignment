@@ -1,20 +1,33 @@
 <!DOCTYPE html>
 <html>
-    <head><title>Sign up</title></head>
+    <head>
+        <title>Sign up</title>
+        <link rel="stylesheet" type="text/css" href="/styles.css">
+    </head>
     <body>
-        <h1>Sign Up</h1><br>
-        <form>
-            Full name:<input type="text" placeholder="full name" id="fullname"  required="required"><br><br>
-            Email ID:<input type="email" placeholder="email id" id="emailid"  required="required"><br><br>
-            Password:<input type="password" placeholder="password" id="password"  required="required"><br><br>
-            Confirm Password:<input type="password" placeholder="password" id="confirmpass"  required="required"><br><br>
-            Author:<input type="radio" value="author" name="user"><br>
-            Reviewer:<input type="radio" value="reviewer" name="user"><br>
-            Admin<input type="radio" value="admin" name="user"><br>
-            
-            <button type="button" onclick="validate()">Signup</button>
-            <a href="/login">I already have an account</a>
+        <div class="welcome signup">
+            <h1>Sign Up</h1><br>
+            <form>
+                <table class="signuptable">
+                    <tr><td>Full name:</td><td><input class="input" type="text" placeholder="full name" id="fullname"  required="required"></td></tr>
+                    <tr><td>Email ID:</td><td><input class="input" type="email" placeholder="email id" id="emailid"  required="required"></td></tr>
+                    <tr><td>Password:</td><td><input class="input" type="password" placeholder="password" id="password"  required="required"></td></tr>
+                    <tr><td>Confirm Password:</td><td><input class="input" type="password" placeholder="password" id="confirmpass"  required="required"></td></tr>
+                </table>
+                <table>
+                    <tr><td>Author:</td><td><input type="radio" value="author" name="user"><br></td></tr>
+                    <tr><td>Reviewer:</td><td><input type="radio" value="reviewer" name="user"><br></td></tr>
+                    <tr><td>Admin</td><td><input type="radio" value="admin" name="user"><br></td></tr>
+                </table>
+                <table>
+                    <tr>
+                        <td><button type="button" class="login" onclick="validate()">Signup</button></td>
+                        <td><a href="/login">I already have an account</a></td>
+                    </tr>
+                    
+                </table>
             </form>
+        </div>   
         <script>
             function validate(){
                 var name=document.getElementById('fullname').value;

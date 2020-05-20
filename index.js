@@ -1,7 +1,7 @@
 const admin = require('firebase-admin');
 const express = require('express');
 const app = express();
-const port = 3011;
+const port = 3000;
 const path = require('path');
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
@@ -38,6 +38,9 @@ app.use(bodyParser.json())
 
 // To parse the cookies in user browser
 app.use(cookieParser());
+
+app.use(express.static(__dirname + '/ui/fonts'));
+app.use(express.static(__dirname + '/ui/styles'));
 
 // Initial page
 app.get('/', (req, res) =>{
@@ -211,10 +214,10 @@ app.listen(port, () => console.log(`Example app listening at http://localhost:${
 
 
 function changeSubmission(req,res,status){
-    console.log(req.query.doc);
     // update the status of the paper
     db.collection('papers').doc(req.query.doc).update({
-        status:status?'accepted':'rejected',
+        'status':status?'accepted':'rejected',
+        'review':req.query.review
     }).then(value=>{
         // Change the field in the reviewer profile
         db.collection('reviewer').doc(req.cookies.user).update({
@@ -234,19 +237,22 @@ function changeSubmission(req,res,status){
 
 function giveReviewerPapers(req,res){
     var tablecontent=""
+    const review=`<textarea id="review"></textarea>`;
     db.collection('papers').where('reviewer','==',req.cookies.user).get().then((value)=>{
         
         value.docs.forEach((f)=>{
             const actions=f.data().status=='assigned'?`
                 <td>
-                    <button type="button" onclick="acceptSubmission('${f.id}')">Accept</button>
-                    <button type="button" onclick="rejectSubmission('${f.id}')">Reject</button>
+                    <button type="button" class="actionaccept" onclick="acceptSubmission('${f.id}')">Accept</button>
+                    <button type="button" class="actionreject" onclick="rejectSubmission('${f.id}')">Reject</button>
                 </td>  
             `:'<td></td>';
             tablecontent+=`
             <tr>
                 <td><a href="javascript:void(0);" target=_"blank" onclick="javascript:window.open('/download?file='+${f.id}+'.pdf');" class="popup">${f.data().name}</a></td>
-                <td>${f.data().status}</td>
+                <td class="${f.data().status}">${f.data().status}</td>
+                <td class="description">${f.data().description}</td>
+                <td>${f.data().review==null?review:f.data().review}</td>
                 ${actions}
             </tr>
             `;
@@ -256,6 +262,8 @@ function giveReviewerPapers(req,res){
                 <tr>
                     <th>Paper title</th>
                     <th>status</th>
+                    <th>Description</th>
+                    <th>Review</th>
                     <th>actions</th>
                 </tr>
                 ${tablecontent}
@@ -273,11 +281,13 @@ function getAuthorPapers(user,res){
         value.docs.forEach((f)=>{
              tableContent+=`<tr>
                 <td><a href="javascript:void(0);" target=_"blank" onclick="javascript:window.open('/download?file='+${f.id}+'.pdf');" class="popup">${f.data().name}</a></td>
-                <td>${f.data().status}</td>
-                <td><button type="button" onclick="removeSubmission('${f.id}')">Delete</button></td>                    
+                <td class="${f.data().status}">${f.data().status}</td>
+                <td class="description">${f.data().description}</td>
+                <td class="description">${f.data().review==null?'No reviews':f.data().review}</td>
+                <td><button type="button" class="actiondelete" onclick="removeSubmission('${f.id}')">Delete</button></td>                    
             </tr>`
         });
-        const uploadbutton=`<button onclick="window.location='/upload'">Upload</button>`;
+        const uploadbutton=`<button class="uploadbutton" onclick="window.location='/upload'">Upload</button>`;
         const welcomeMessage=`
         <b>Welcome</b> ${user}<br><br>`;
         if(value.docs.length>0)
@@ -288,6 +298,8 @@ function getAuthorPapers(user,res){
                         <tr>
                             <th>Paper title</th>
                             <th>status</th>
+                            <th>Description</th>
+                            <th>review</th>
                             <th>actions</th>
                         </tr>
                         ${tableContent}
@@ -312,6 +324,7 @@ function giveAdminPapers(res){
     const greeting="<b>Welcome</b> Admin<br>"
     const tablehead=`<tr>
         <th>Paper title</th>
+        <th>Description</th>
         <th>status</th>
         <th>Author</th>
         <th>actions</th>
@@ -319,11 +332,12 @@ function giveAdminPapers(res){
     db.collection('papers').get().then((values)=>{
         var tableContent=""
         values.docs.forEach((f)=>{
-            const tAction=f.data().status=='submitted'?`<td><button type="button" onclick="javascript:window.location='/assignpaper?file=${f.id}&&user=${f.data().author}'">Assign</button>`:'';
+            const tAction=f.data().status=='submitted'?`<td><button type="button" class="actionassign" onclick="javascript:window.location='/assignpaper?file=${f.id}&&user=${f.data().author}'">Assign</button>`:'';
             tableContent+=`
                 <tr>
-                    <td><a href="javascript:void(0);" target="_blank" onclick="javascript:window.open('/download?file='+${f.id}+'.pdf');" class="popup">${f.data().name}</a></td>
-                    <td>${f.data().status}</td>
+                    <td><a href="javascript:void(0);" target="_blank" onclick="javascript:window.open('/download?file='+${f.id}+'.pdf');" class="popup">${f.data().name}</a></td>    
+                    <td class="description">${f.data().description}</td>
+                    <td class="${f.data().status}">${f.data().status}</td>
                     <td>${f.data().author}</td>
                     ${tAction}                
                 </tr>`
@@ -352,7 +366,7 @@ function assignToReviewer(req,res){
         const head=`
         <head>
             <title>Assign paper</title>
-            ${style}
+            <link rel="stylesheet" type="text/css" href="/styles.css">
         </head>`;
 
         const greeting=`<h3>Welcome</h3><br>Assign ${req.query.file} of ${req.query.user}<br>`;
@@ -363,20 +377,22 @@ function assignToReviewer(req,res){
                 <tr>
                         <td>${f.data().name}</td>
                         <td>${f.id}</td>
-                    <td><button onclick="javascript:window.location='/assign?file=${req.query.file}&&reviewer=${f.id}'">Assign</button></td>
+                        <td><button class="actionassign" onclick="javascript:window.location='/assign?file=${req.query.file}&&reviewer=${f.id}'">Assign</button></td>
                 `
             });
             const body=`
-                ${greeting}
                 <body>
-                <table>
-                    <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Action</th>
-                    </tr>
-                ${tableContent}
-                </table>
+                    <div class="welcome dashboard">
+                        ${greeting}
+                        <table>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Action</th>
+                            </tr>
+                        ${tableContent}
+                        </table>
+                    </div>
                 </body>
             `;
             if(value.docs.length>0){
@@ -393,7 +409,7 @@ function assignToReviewer(req,res){
                 <!DOOCTYPE>
                 <html>
                     ${head}
-                    <body>
+                    <body class="welcome">
                     No reviewers available
                     </body>
                 </html>

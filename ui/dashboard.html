@@ -2,34 +2,41 @@
 <html>
     <head>
         <title>Dashboard</title>
-        <style> 
-            table,th,td{
-                border: 1px solid black;;
-                /* border-color: black; */
-            }
-            #logout{
-                position: absolute;
-                top: 10px;
-                right: 10px;
-            }
-        </style>
+        <link rel="stylesheet" type="text/css" href="/styles.css">
     </head>
     <body>
-
-        <h1>Dashboard</h1><br>
-        <button id="logout" onclick="javascript:window.location='/logout'">Logout</button>
-        <div id="serverresponse">
-            
+        <div class="welcome dashboard">
+            <h1>Dashboard</h1><br>
+            <button id="logout" onclick="javascript:if(confirm('Are you sure to logout?'))window.location='/logout'">Logout</button>
+            <div id="serverresponse"></div>
         </div>
         <script>
             function acceptSubmission(id){
-            if(confirm('Are you sure to accept this?')){
-                window.location='/acceptsubmission?doc='+id;
+                const review=document.getElementById('review').value;
+                if(review==null||review==''){
+                    alert('Please enter a review');
+                    return;
+                }
+                else if(review.length>50){
+                    alert("Review should be 50 characters or less");
+                    return;
+                }
+                if(confirm('Are you sure to accept this?')){
+                    window.location='/acceptsubmission?doc='+id+'&&review='+review;
             }
             }
             function rejectSubmission(id){
+                const review=document.getElementById('review').value;
+                if(review==null||review==''){
+                    alert('Please enter a review');
+                    return;
+                }
+                else if(review.length>50){
+                    alert("Review should be 50 characters or less");
+                    return;
+                }
                 if(confirm('Are you sure to reject this?')){
-                    window.location='/rejectsubmission?doc='+id;
+                    window.location='/rejectsubmission?doc='+id+'&&review='+review;
                 }
             }
             function getDatabaseDetails(){

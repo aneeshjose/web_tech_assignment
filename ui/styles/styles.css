@@ -1,0 +1,157 @@
+@font-face {
+    font-family: poppins;
+    src: url(/poppins-semibold.ttf);
+}
+.welcome{
+    font-family: poppins;
+    margin: 0 auto;
+    padding: 10px;
+}
+.login{
+    color: white;
+    background-color: blue;
+    padding: 10px;
+    width: 100px;
+    border:1px solid white;
+    border-radius: 10px;
+    box-shadow: none;
+    text-align: center;
+    margin: 10px;
+}
+.index{
+    width:100px;
+    height: 100px;
+    margin-top: 200px;
+}
+
+.loginpage{
+    width: 300px;
+    height: 500px;
+}
+
+.input{
+    font-family: poppins;
+    margin: unset;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: none;
+    border-color: black;
+}
+
+#logout{
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: white;
+    background-color: red;
+    border:0px solid black;
+    padding: 10px;
+    width: 100px;
+    border-radius: 5px;
+    box-shadow: none;
+    text-align: center;
+    margin: 10px;
+}
+th{
+    background-color: brown;
+    color: white;
+}
+.submitted{
+    color: blueviolet;
+}
+.rejected{
+    color: red;
+}
+.accepted{
+    color: green;
+}
+.assigned{
+    color: yellowgreen;
+}
+
+.signuptable td{
+    /* height: 30px; */
+    margin: 10px;
+    padding: 10px;
+}
+
+.actiondelete{
+    font-family: poppins;
+    color: white;
+    border-radius: 5px;
+    padding-left: 30px;
+    padding-right: 30px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    background-color: red;
+    border: 0px solid black;
+}
+
+.actionaccept{
+    color: white;
+    border-radius: 5px;
+    padding-left: 30px;
+    padding-right: 30px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    background-color: green;
+    border: 1px solid black;
+}
+.actionreject{
+    color: white;
+    border-radius: 5px;
+    padding-left: 30px;
+    padding-right: 30px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    background-color:brown;
+    border: 1px solid black;
+}
+.actionassign{
+    color: white;
+    border-radius: 5px;
+    padding-left: 30px;
+    padding-right: 30px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    background-color: darkgoldenrod;
+    border: 1px solid black;
+}
+
+.dashboard td{
+    text-align: center; 
+    vertical-align: middle;
+    padding-left: 50px;
+    padding-right: 50px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border: 0.1px solid black;
+
+    /* border-bottom: 1px solid black; */
+}
+
+.uploadbutton{
+    border: 0px solid black;
+    background-color: darkgreen;
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 10px;
+}
+.welcome .upload td{
+    border: none; 
+}
+textarea{
+    border: 2px solid black;
+    font-family: poppins;
+}
+.fileselect{
+    border: .5px solid black;
+    font-size: medium;
+    font-family: poppins;
+    padding: 10px;
+}
+
+.description{
+    max-width: 300px;
+}

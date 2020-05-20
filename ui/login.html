@@ -1,17 +1,24 @@
 <!DOCTYPE html>
 <html>
-    <head><title>Login</title></head>
+    <head>
+        <title>Login</title>
+        <link rel="stylesheet" type="text/css" href="/styles.css">
+    </head>
     <body>
-        <h1>Login</h1><br>
-        <form>
-            Email ID:<input type="email" placeholder="email id" id="emailid"  required="required"><br><br>
-            Password:<input type="password" placeholder="password" id="password"  required="required"><br><br>
-            Author:<input type="radio" value="author" name="user"><br>
-            Reviewer:<input type="radio" value="reviewer" name="user"><br>
-            Admin<input type="radio" value="admin" name="user"><br>
-            <button type="button" onclick="validate()">Login</button>
-            <a href="/signup">I don't have an account</a>
-        </form>
+        <div class="welcome loginpage">
+            <h1>Login</h1><br>
+            <form>
+                Email ID:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input class="input" type="email" placeholder="email id" id="emailid"  required="required"><br><br>
+                Password:&nbsp;<input class="input" type="password" placeholder="password" id="password"  required="required"><br><br>
+                Author:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="radio" value="author" name="user"><br>
+                Reviewer:&nbsp;<input type="radio" value="reviewer" name="user"><br>
+                Admin:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="radio" value="admin" name="user"><br>
+                <button type="button" class ="login" onclick="validate()">Login</button>
+                <br>
+                <a href="/signup">I don't have an account</a>
+            </form>
+        </div>
+        
         <script>
             function validate(){
                 var email=document.getElementById('emailid').value;
